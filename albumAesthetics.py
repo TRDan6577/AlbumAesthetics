@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import mechanize
 import re
+import string
 
 br = mechanize.Browser()
 br.set_handle_robots(False) # Be mean and ignore the site's request to not use robots
@@ -17,7 +18,23 @@ soup = BeautifulSoup(html.read(), 'html.parser')
 # 2) Turn off safe search for all results
 # 3) Set the type of search to an image search
 
-# Then in print(soup.prettify()), look for the a href. Get rid of the 
+# Then in print(soup.prettify()), look for the a href.
+
+"""
+come up with a faster way. If you get the urls this way,
+you still need to parse them once more. If you get the URLs
+and their corresponding picture sizes at the same time, you
+only need to go through all of the urls once
+"""
+
+urls = []
+
+for link in soup.find_all('a'):
+    if(string.find(link.get('href'), "/url?q=") != -1):
+        urls.append(link.get('href'))
+
+
+# Get rid of the 
 # '/url?q=' and replace it with 'https://www.google.com/imgres?imgurl='
 # this will take you to another page. Grab the source html again and put it
 # in the soup to read again.
