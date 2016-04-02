@@ -14,7 +14,7 @@ DELETION_SIZE = 7 # the size of the string "/url?q="
 
 br = mechanize.Browser()
 br.set_handle_robots(False) # Be mean and ignore the site's request to not use robots
-br.addheaders = [('User-Agent', 'Mozilla')] # pretend we're a browser
+br.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.125 Safari/537.36')] # pretend we're a browser
 html = br.open("https://www.google.com/search?q=this+is+a+test&safe=off&tbm=isch")
 
 # prepare some delicious soup
@@ -39,7 +39,7 @@ only need to go through all of the urls once
 urls = []
 
 for link in soup.find_all('a'):
-    if(string.find(link.get('href'), "/url?q=") != -1):
+    if(string.find(link.get('href'), "/images?imgurl=") != -1):
         urls.append(link.get('href'))
 
 # To find the size of the image, look for the multiplication sign
