@@ -39,19 +39,15 @@ only need to go through all of the urls once
 urls = []
 
 for link in soup.find_all('a'):
-    if(string.find(link.get('href'), "/images?imgurl=") != -1):
+    if(link.get('href') is not None and 
+       string.find(str(link.get('href')), "/imgres?imgurl=") != -1):
         urls.append(link.get('href'))
 
 # To find the size of the image, look for the multiplication sign
 # (unicode) U+00D7 or \xd7
 
-
-# sizeFinder iterates over the 'br' tags looking for the size of the image
-sizeFinder = soup.a
-sizeFinder = sizeFinder.find_next('br') # Find the first <br></br> tag
-sizeFinder = sizeFinder.find_next('br')
-sizeFinder = sizeFinder.find_next('br')
-brString = sizeFinder.getText().encode('utf-8')
+# Get all the sizes
+sizes = soup.find_all(attrs={"class": "rg_ilmn"})
 urlIndex = 0 # Keep track of which URL we're looking at
 
 # Keep track of the highest resolution and it's corresponding index
@@ -110,7 +106,7 @@ while(string.find(brString, MULTIPLICATION) != -1):
 imagePage = IMAGE_SEARCH + (urls[bestIndex])[DELETION_SIZE:]
 
 print(imagePage)
-
+"""
 # Get rid of the 
 # '/url?q=' and replace it with 'https://www.google.com/imgres?imgurl='
 # this will take you to another page. Grab the source html again and put it
