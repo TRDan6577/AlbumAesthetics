@@ -23,8 +23,11 @@ print("[+] Request sent!")
 
 print("[*] Preparing the delicious soup")
 # prepare some delicious soup
-soup = BeautifulSoup(html.read(), 'html.parser')
+soup = BeautifulSoup(html.read(), 'html.parser')  # <-- Use a different parser for better speed?
 print("[+] Soup ready!")
+
+# We don't need the browser anymore
+br.close()
 
 # URLs for images searches on google:
 # https://www.google.com/search?q=my+search+terms+here&safe=off&tbm=isch
@@ -98,3 +101,15 @@ for imageType in ACCEPTABLE_IMAGE_FORMATS:
                      , imageType) + len(imageType))]
 
 print(imagePage)
+
+# Download the image
+print("[*] Creating the browser")
+br = mechanize.Browser()
+print("[*] Creating the http GET request")
+br.set_handle_robots(False) # Be mean and ignore the site's request to not use robots
+br.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.125 Safari/537.36')] # pretend we're a browser
+data = br.open(imagePage).read()
+save = open("acdc back in black", 'wb')
+save.write(data)
+save.close()
+br.close()
