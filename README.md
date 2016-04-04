@@ -7,7 +7,7 @@ For those of us that purchase/aquire music from places other than
 [Google Music](https://music.google.com), and [iTunes](http://www.apple.com/itunes/),
 we are burdened with either low quality or no album art at all leaving us sad. Given a string
 to search for on [Google Images](https://images.google.com), this program finds the highest
-resolution square(ish) photo and downloads it for you (within 20 pixels of sqare so a 1500 x 1480
+resolution square(ish) photo and downloads it for you (within 20 pixels of square so a 1500 x 1480
 image would be downloaded)
 
 ## Installation
