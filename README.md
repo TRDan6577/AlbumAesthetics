@@ -39,3 +39,4 @@ The resulting image will be placed in the same location as albumAesthetics.py
 * Add an option to NOT download photo but to give user the url instead
 * Add an option to change the allowed distance from square to +- 20 pixels
 * By default, include a .txt file of where the image was aquired from. Add an option for the user to NOT include the .txt file at their own risk (copyright kind of stuff)
+* Threading - Multiple album arts downloading at same time

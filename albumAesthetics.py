@@ -17,7 +17,6 @@ disected....                   |   1                | 2      | 3
 # Imports
 from bs4 import BeautifulSoup
 import mechanize
-import re
 import string
 import sys
 
@@ -26,9 +25,9 @@ TOLERANCE = 20  # The max distance from a square image that we'll accept
 IMAGE_SEARCH = 15  # The length of "/imgres?imgurl="
 DELETION_SIZE = 7  # The length of "/url?q="
 IMAGE_SEARCH_URL_PART1 = "https://www.google.com/search?q="
-IMAGE_SEARCH_URL_PART2 = "&safe=off&tbm=isch"  # Turn off safe search and turn
-                                               # on image search
+IMAGE_SEARCH_URL_PART2 = "&safe=off&tbm=isch"
 ACCEPTABLE_IMAGE_FORMATS = {".jpg", ".png", ".gif"}
+
 
 # Functions
 def findHighestRes(sizes):
@@ -48,23 +47,28 @@ def findHighestRes(sizes):
 
         curIndex = 1  # There's a space before the length
         sizeString = sizes[i].getText()
+        sizeStringLength = len(sizeString)
 
         # Set the length
         strLength = ''
         while(sizeString[curIndex].isdigit()):
             strLength = strLength + sizeString[curIndex]
-            curIndex+=1
-            # TODO: raise error here if you go out of index
-
+            curIndex += 1
+            if(curIndex >= sizeStringLength):
+                print("An error occured while parsing an image's size")
+                sys.exit(0)
+            
         curIndex = curIndex + 3  # This puts us at the start of the width
 
         # Set the width
         strWidth = ''
         while(sizeString[curIndex].isdigit()):
             strWidth = strWidth + sizeString[curIndex]
-            curIndex+=1
-            # TODO: raise error here if you go out of index
-        
+            curIndex += 1
+            if(curIndex >= sizeStringLength):
+                print("An error occured while parsing an image's size")
+                sys.exit(0)
+
         length = int(strLength)
         width = int(strWidth)
 
@@ -83,7 +87,7 @@ def getHTML(URL):
     purpose: crafts the http GET message to send to URL and gives the user the
              resulting html code
     :param URL: (str) The URL to open
-    :return: (Not sure which type because the python mechanize documentation 
+    :return: (Not sure which type because the python mechanize documentation
              is bad) the opened html page
     """
 
@@ -91,21 +95,33 @@ def getHTML(URL):
     br = mechanize.Browser()
 
     # Create the HTTP GET headers
-    br.set_handle_robots(False) # Be mean and ignore the site's request to not use robots
-    br.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.125 Safari/537.36')] # pretend we're a browser
-    
+    br.set_handle_robots(False)
+    br.addheaders = [('User-Agent', ('Mozilla/5.0 (Windows NT 6.1; WOW64) ' +
+                      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+                      ' Chrome/43.0.2357.125 Safari/537.36'))]
+
     # Return the result of the sent request
     return br.open(URL)
-    # TODO: Make sure the value returned is not None
 
 
 def main():
-    # TODO: Check the command line args. Make sure artist/album in quotes
+    """
+    purpose: the main running function to get the hd album art
+    """
+    # Check the cmd args
+    if(len(sys.argv) != 2):
+        print('usage: python albumAesthetics.py "artist name album name"')
+        return 0
+
     searchTerm = str(sys.argv[1])
 
     # Get the webpage
     html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
-           IMAGE_SEARCH_URL_PART2)
+                   IMAGE_SEARCH_URL_PART2)
+
+    if(html is None):
+        print("An error occurred while opening the webpage")
+        return 0
 
     # prepare some delicious soup (parse the html with BeautifulSoup)
     soup = BeautifulSoup(html.read(), 'html.parser')  # <-- Use a different parser for better speed?
@@ -113,24 +129,41 @@ def main():
     # Get all the hrefs that contain an image url
     urls = []
     for link in soup.find_all('a'):
-        if(link.get('href') is not None and 
+        if(link.get('href') is not None and
            string.find(str(link.get('href')), "/imgres?imgurl=") != -1):
             urls.append(link.get('href'))
 
     # Get all the sizes
     sizes = soup.find_all(attrs={"class": "rg_ilmn"})
-    
+
+    # Get the index of the highest quality album art
     bestIndex = findHighestRes(sizes)
-    # TODO: Check to see if best index is -1
+    
+    # If the index is -1, no acceptable image was found. Exit
+    if(bestIndex == -1):
+        print("No album artwork found within the acceptable tolerance")
+        print("You can change the tolerance with -t (not implemented yet)")
+        return 0
 
     # Find the substring that actually contains the image url
+    imagePage = None
     for imageType in ACCEPTABLE_IMAGE_FORMATS:
         if(imageType in urls[bestIndex]):
-            imagePage = (urls[bestIndex])[IMAGE_SEARCH:(string.find(urls[bestIndex]
-                         , imageType) + len(imageType))]
+            imagePage = (urls[bestIndex])[IMAGE_SEARCH:(string.find(
+                         urls[bestIndex], imageType) + len(imageType))]
 
-    # Download the image
+    # If something was messed up
+    if(imagePage is None):
+        print("Image found, but not able to find its URL")
+        return 0
+
+    # Get the HTML for the image
     html = getHTML(imagePage)
+    if(html is None):
+        print("An error occurred while opening the webpage")
+        return 0
+
+    # Save the image
     data = html.read()
     save = open(searchTerm, 'wb')
     save.write(data)
