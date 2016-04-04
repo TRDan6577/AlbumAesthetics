@@ -24,8 +24,12 @@ Install Album Aesthetics with the git clone command
 
 > `git clone https://www.github.com/trdan6577/albumaesthetics.git`
 
-## Disclaimer:
-This is not finished and is currently a work in progress
+## Yes, you too can bask in the HD glory (usage):
+Currently, the only way to run it is from the command line:
+
+> `python albumAesthetics.py "artist name and their album in quotes"`
+
+The resulting image will be placed in the same location as albumAesthetics.py
 
 ### Future Plans
 * Multiple search strings (separated by colons? "hey hey : yo yo")
