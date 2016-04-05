@@ -7,11 +7,12 @@ For those of us that purchase/aquire music from places other than
 [Google Music](https://music.google.com), and [iTunes](http://www.apple.com/itunes/),
 we are burdened with either low quality or no album art at all leaving us sad. Given a string
 to search for on [Google Images](https://images.google.com), this program finds the highest
-resolution square(ish) photo and downloads it for you (within 20 pixels of square so a 1500 x 1480
-image would be downloaded)
+resolution square(ish) photo and downloads it for you (within a default of 20 pixels of square 
+so a 1500 x 1480 image would be downloaded)
 
 ## Installation
-* Prerequisites - You'll need to have the following python packages installed:
+* Prerequisites - You MUST have python 2.7+ installed. You'll need to have the following python 
+packages installed:
 [mechanize](http://wwwsearch.sourceforge.net/mechanize/) and
 [BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/). On Unix/Linux systems, these can be
 installed with pip
@@ -29,14 +30,22 @@ Currently, the only way to run it is from the command line:
 
 > `python albumAesthetics.py "artist name and their album in quotes"`
 
-The resulting image will be placed in the same location as albumAesthetics.py
+This is the most basic way to run the program. This results in the image and a .txt file
+being placed in the same directory as the program. The .txt file contains the link where the
+image came from.
 
-### Future Plans
+##### Don't care where the image came from?
+Use the '-n' or '--no-source-file' option to download just the image
+
+##### Wait a sec, +-20 pixels means the image might not be exactly square!!!
+Yep, great mathematical induction friend! If you want a perfectly square image, use the
+'-t TOLERANCE' or '--tolerance TOLERANCE' option where TOLERANCE is the number of
+pixels from square you'll allow
+
+## Future Plans
 * Multiple search strings (separated by colons? "hey hey : yo yo")
 * File system scanning - automatically build searches based on nested folders
 * Sleep between multiple searches so google doesn't block you
 * Add an option to not sleep between searches
 * Add an option to NOT download photo but to give user the url instead
-* Add an option to change the allowed distance from square to +- 20 pixels
-* By default, include a .txt file of where the image was aquired from. Add an option for the user to NOT include the .txt file at their own risk (copyright kind of stuff)
 * Threading - Multiple album arts downloading at same time
