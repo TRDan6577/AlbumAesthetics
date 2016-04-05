@@ -50,6 +50,11 @@ def setArgParserOptions():
                         ' square (ex: 393x400 would be within 7 tolerance)'),
                         type=int)
 
+    # Add the option to print the url of the image rather than downloading it
+    parser.add_argument('-u', '--url-only', help=('Don\'t download the image.' +
+                        ' Instead, print the image url to stdout'),
+                        action='store_true', dest='urlOnly')
+
     return parser.parse_args()
 
 
@@ -81,7 +86,7 @@ def findHighestRes(sizes, TOLERANCE):
             if(curIndex >= sizeStringLength):
                 print("An error occured while parsing an image's size")
                 sys.exit(0)
-            
+
         curIndex = curIndex + 3  # This puts us at the start of the width
 
         # Set the width
@@ -134,7 +139,7 @@ def main():
     """
     # Parse the args with argparse
     args = setArgParserOptions()
-    
+
     # Set the options based on the arguments
 
     # Set the tolerance (default is 20)
@@ -172,7 +177,7 @@ def main():
 
     # Get the index of the highest quality album art
     bestIndex = findHighestRes(sizes, TOLERANCE)
-    
+
     # If the index is -1, no acceptable image was found. Exit
     if(bestIndex == -1):
         print("No album artwork found within the acceptable tolerance")
@@ -197,18 +202,21 @@ def main():
         print("An error occurred while opening the webpage")
         return 0
 
-    # Save the image
-    data = html.read()
-    save = open(searchTerm, 'wb')
-    save.write(data)
-    save.close()
-
-    # Give credit to the source by writing the image url to a txt file
-    if(writeFile):
-        save = open(searchTerm + '.txt', 'wb')
-        save.write(imagePage)
+    # If we don't just want to print the URL to stdout
+    if(not args.urlOnly):
+        # Save the image
+        data = html.read()
+        save = open(searchTerm, 'wb')
+        save.write(data)
         save.close()
 
+        # Give credit to the source by writing the image url to a txt file
+        if(writeFile):
+            save = open(searchTerm + '.txt', 'wb')
+            save.write(imagePage)
+            save.close()
+    else:
+        print(imagePage)
 
 if __name__ == "__main__":
     main()
