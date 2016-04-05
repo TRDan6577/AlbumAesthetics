@@ -11,24 +11,23 @@ resolution square(ish) photo and downloads it for you (within a default of 20 pi
 so a 1500 x 1480 image would be downloaded)
 
 ## Installation
-* Prerequisites - You MUST have python 2.7+ installed. You'll need to have the following python 
-packages installed:
+* Prerequisites - You MUST have python 2.7+ installed. You'll need to have the
 [mechanize](http://wwwsearch.sourceforge.net/mechanize/) and
-[BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/). On Unix/Linux systems, these can be
-installed with pip
+[BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/) python packages installed. On Unix/Linux
+systems, these can be installed with pip
 
-> `pip install mechanize`
+`pip install mechanize`
 
-> `pip install BeautifulSoup`
+`pip install BeautifulSoup`
 
 Install Album Aesthetics with the git clone command
 
-> `git clone https://www.github.com/trdan6577/albumaesthetics.git`
+`git clone https://www.github.com/trdan6577/albumaesthetics.git`
 
-## Yes, you too can bask in the HD glory (usage):
+## Yes, you too can bask in the HD glory (usage)
 Currently, the only way to run it is from the command line:
 
-> `python albumAesthetics.py "artist name and their album in quotes"`
+`python albumAesthetics.py "artist name and their album in quotes"`
 
 This is the most basic way to run the program. This results in the image and a .txt file
 being placed in the same directory as the program. The .txt file contains the link where the
