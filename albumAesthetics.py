@@ -15,13 +15,13 @@ disected....                   |   1                | 2      | 3
 """
 
 # Imports
+import argparse
 from bs4 import BeautifulSoup
 import mechanize
 import string
 import sys
 
 # Magic numbers and variables
-TOLERANCE = 20  # The max distance from a square image that we'll accept
 IMAGE_SEARCH = 15  # The length of "/imgres?imgurl="
 DELETION_SIZE = 7  # The length of "/url?q="
 IMAGE_SEARCH_URL_PART1 = "https://www.google.com/search?q="
@@ -30,12 +30,36 @@ ACCEPTABLE_IMAGE_FORMATS = {".jpg", ".png", ".gif"}
 
 
 # Functions
-def findHighestRes(sizes):
+def setArgParserOptions():
+    """
+    purpose: parses the command line arguments and returns it's findings
+    :return: (NameSpace) the result of the command line arguments
+    """
+    parser = argparse.ArgumentParser(description='Get high-res album art',
+                                     prog='albumAesthetics.py')
+    parser.add_argument('searchTerm', metavar=('"Name of album and artist' +
+                        ' in quotes"'), type=str, help=('Place the name of ' +
+                        'the artist and album title in quotes'))
+
+    # Add the option to not include a .txt file with the source
+    parser.add_argument('-n', '--no-source-file', help=('Image sources are ' +
+                        'not cited in a .txt file'), action='store_true',
+                        dest='writeFile')
+    # Add the option to change the tolerance from square
+    parser.add_argument('-t', '--tolerance', help=('Sets the tolerance from' +
+                        ' square (ex: 393x400 would be within 7 tolerance)'),
+                        type=int)
+
+    return parser.parse_args()
+
+
+def findHighestRes(sizes, TOLERANCE):
     """
     purpose: finds the highest square resolution in the first twenty search
              results
     :param sizes: (list) a list of Tag objects that contain the image size.
                   For info on Tag objects, see the BeautifulSoup docs
+    :param TOLERANCE: (int) Max distance from a square image that we'll accept
     :return: (int) index of the highest resolution
     """
     # Keep track of the highest resolution and it's corresponding index
@@ -108,12 +132,22 @@ def main():
     """
     purpose: the main running function to get the hd album art
     """
-    # Check the cmd args
-    if(len(sys.argv) != 2):
-        print('usage: python albumAesthetics.py "artist name album name"')
-        return 0
+    # Parse the args with argparse
+    args = setArgParserOptions()
+    
+    # Set the options based on the arguments
 
-    searchTerm = str(sys.argv[1])
+    # Set the tolerance (default is 20)
+    if(args.tolerance is not None):
+        TOLERANCE = args.tolerance
+    else:
+        TOLERANCE = 20  # The max dist from a square image that we'll accept
+
+    # Determine whether or not to write the source text file
+    writeFile = not args.writeFile
+
+    # Set the search term
+    searchTerm = args.searchTerm
 
     # Get the webpage
     html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
@@ -124,7 +158,7 @@ def main():
         return 0
 
     # prepare some delicious soup (parse the html with BeautifulSoup)
-    soup = BeautifulSoup(html.read(), 'html.parser')  # <-- Use a different parser for better speed?
+    soup = BeautifulSoup(html.read(), 'html.parser')
 
     # Get all the hrefs that contain an image url
     urls = []
@@ -137,12 +171,12 @@ def main():
     sizes = soup.find_all(attrs={"class": "rg_ilmn"})
 
     # Get the index of the highest quality album art
-    bestIndex = findHighestRes(sizes)
+    bestIndex = findHighestRes(sizes, TOLERANCE)
     
     # If the index is -1, no acceptable image was found. Exit
     if(bestIndex == -1):
         print("No album artwork found within the acceptable tolerance")
-        print("You can change the tolerance with -t (not implemented yet)")
+        print("You can change the tolerance with -t (use -h for more help)")
         return 0
 
     # Find the substring that actually contains the image url
@@ -168,6 +202,12 @@ def main():
     save = open(searchTerm, 'wb')
     save.write(data)
     save.close()
+
+    # Give credit to the source by writing the image url to a txt file
+    if(writeFile):
+        save = open(searchTerm + '.txt', 'wb')
+        save.write(imagePage)
+        save.close()
 
 
 if __name__ == "__main__":
