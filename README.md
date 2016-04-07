@@ -41,10 +41,14 @@ Yep, great mathematical induction friend! If you want a perfectly square image, 
 '-t TOLERANCE' or '--tolerance TOLERANCE' option where TOLERANCE is the number of
 pixels from square you'll allow
 
+##### I just want to upload these images to another site
+Some sites allow you to upload a photo by giving them a link. If you want the link to the
+image, use the '-u' or '--url-only' options. Note that using this option does NOT create
+the .txt file in your local directory
+
 ## Future Plans
 * Multiple search strings (separated by colons? "hey hey : yo yo")
 * File system scanning - automatically build searches based on nested folders
 * Sleep between multiple searches so google doesn't block you
 * Add an option to not sleep between searches
-* Add an option to NOT download photo but to give user the url instead
 * Threading - Multiple album arts downloading at same time
