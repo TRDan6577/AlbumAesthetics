@@ -12,11 +12,8 @@ so a 1500 x 1480 image would be downloaded)
 
 ## Installation
 * Prerequisites - You MUST have python 2.7+ installed. You'll need to have the
-[mechanize](http://wwwsearch.sourceforge.net/mechanize/) and
-[BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/) python packages installed. On Unix/Linux
-systems, these can be installed with pip
-
-`pip install mechanize`
+[BeautifulSoup](http://www.crummy.com/software/BeautifulSoup/) python package installed. On Unix/Linux
+systems, this can be installed with pip
 
 `pip install BeautifulSoup`
 
@@ -46,9 +43,13 @@ Some sites allow you to upload a photo by giving them a link. If you want the li
 image, use the '-u' or '--url-only' options. Note that using this option does NOT create
 the .txt file in your local directory
 
+##### Entering in one search at a time is so tedious!
+Search more than 1 album/artist combination by seperating them with colons in the quotes.
+Example:
+
+`python albumAesthetics.py "a day to remember for those who have heart:twenty one pilots blurryface:
+ac dc back in black"`
+
 ## Future Plans
-* Multiple search strings (separated by colons? "hey hey : yo yo")
 * File system scanning - automatically build searches based on nested folders
-* Sleep between multiple searches so google doesn't block you
-* Add an option to not sleep between searches
 * Threading - Multiple album arts downloading at same time
