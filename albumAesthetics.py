@@ -17,9 +17,9 @@ disected....                   |   1                | 2      | 3
 # Imports
 import argparse
 from bs4 import BeautifulSoup
-import mechanize
 import string
 import sys
+import urllib2
 
 # Magic numbers and variables
 IMAGE_SEARCH = 15  # The length of "/imgres?imgurl="
@@ -39,7 +39,10 @@ def setArgParserOptions():
                                      prog='albumAesthetics.py')
     parser.add_argument('searchTerm', metavar=('"Name of album and artist' +
                         ' in quotes"'), type=str, help=('Place the name of ' +
-                        'the artist and album title in quotes'))
+                        'the artist and album title in quotes. To enter' +
+                        ' more than 1 artist and album, seperate each ' +
+                        'artist/album combination with ":" (no double ' +
+                        'quotes)'))
 
     # Add the option to not include a .txt file with the source
     parser.add_argument('-n', '--no-source-file', help=('Image sources are ' +
@@ -116,21 +119,22 @@ def getHTML(URL):
     purpose: crafts the http GET message to send to URL and gives the user the
              resulting html code
     :param URL: (str) The URL to open
-    :return: (Not sure which type because the python mechanize documentation
-             is bad) the opened html page
+    :return: (Not sure which type because the urllib2 docs don't really
+             specify) the opened html page
     """
 
+    # TODO: Change the above documentation talking about mechanize
+
     # Create the broswer
-    br = mechanize.Browser()
+    request = urllib2.Request(URL)
 
     # Create the HTTP GET headers
-    br.set_handle_robots(False)
-    br.addheaders = [('User-Agent', ('Mozilla/5.0 (Windows NT 6.1; WOW64) ' +
+    request.add_header('User-Agent', ('Mozilla/5.0 (Windows NT 6.1; WOW64) ' +
                       'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                      ' Chrome/43.0.2357.125 Safari/537.36'))]
+                      ' Chrome/43.0.2357.125 Safari/537.36'))
 
     # Return the result of the sent request
-    return br.open(URL)
+    return urllib2.urlopen(request)
 
 
 def main():
@@ -151,72 +155,75 @@ def main():
     # Determine whether or not to write the source text file
     writeFile = not args.writeFile
 
-    # Set the search term
-    searchTerm = args.searchTerm
+    # Set the search terms
+    searchTerms = args.searchTerm.split(':')
 
-    # Get the webpage
-    html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
-                   IMAGE_SEARCH_URL_PART2)
+    # Open the sources file only if we are going to write to it
+    if(not args.urlOnly and writeFile):
+        file = open('sources.txt', 'wb')
 
-    if(html is None):
-        print("An error occurred while opening the webpage")
-        return 0
+    for searchTerm in searchTerms:
+        # Get the webpage
+        html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
+                       IMAGE_SEARCH_URL_PART2)
 
-    # prepare some delicious soup (parse the html with BeautifulSoup)
-    soup = BeautifulSoup(html.read(), 'html.parser')
+        if(html is None):
+            print("An error occurred while opening the webpage")
+            file.close()
+            return 0
 
-    # Get all the hrefs that contain an image url
-    urls = []
-    for link in soup.find_all('a'):
-        if(link.get('href') is not None and
-           string.find(str(link.get('href')), "/imgres?imgurl=") != -1):
-            urls.append(link.get('href'))
+        # prepare some delicious soup (parse the html with BeautifulSoup)
+        soup = BeautifulSoup(html.read(), 'html.parser')
 
-    # Get all the sizes
-    sizes = soup.find_all(attrs={"class": "rg_ilmn"})
+        # Find the urls in the metadata
+        urls = []
+        for data in soup.find_all(attrs={'class': 'rg_meta'}):
+            # For each metadata entry, if it contains more than 10 entries,
+            # then parse it for the URL
+            if(len(data.getText().split(',')) > 10):
+                for element in data.getText().split(','):
+                    # Look for '"ou":"http' and a .gif, .png, or .jpg
+                    if(string.find(element, '"ou":"http') != -1):
+                        for imageType in ACCEPTABLE_IMAGE_FORMATS:
+                            if(string.find(element, imageType) != -1):
+                                # If found, append just the URL
+                                urls.append(element[6:-1])
 
-    # Get the index of the highest quality album art
-    bestIndex = findHighestRes(sizes, TOLERANCE)
+        # Get all the sizes
+        sizes = soup.find_all(attrs={"class": "rg_ilmn"})
 
-    # If the index is -1, no acceptable image was found. Exit
-    if(bestIndex == -1):
-        print("No album artwork found within the acceptable tolerance")
-        print("You can change the tolerance with -t (use -h for more help)")
-        return 0
+        # Get the index of the highest quality album art
+        bestIndex = findHighestRes(sizes, TOLERANCE)
 
-    # Find the substring that actually contains the image url
-    imagePage = None
-    for imageType in ACCEPTABLE_IMAGE_FORMATS:
-        if(imageType in urls[bestIndex]):
-            imagePage = (urls[bestIndex])[IMAGE_SEARCH:(string.find(
-                         urls[bestIndex], imageType) + len(imageType))]
+        # If the index is -1, no acceptable image was found. Exit
+        if(bestIndex == -1):
+            print("No album artwork found within the acceptable tolerance")
+            print("You can change the tolerance with -t (use -h for more help)")
+            file.close()
+            return 0
 
-    # If something was messed up
-    if(imagePage is None):
-        print("Image found, but not able to find its URL")
-        return 0
+        # Get the HTML for the image
+        html = getHTML(urls[bestIndex])
+        if(html is None):
+            print("An error occurred while opening the webpage")
+            file.close()
+            return 0
 
-    # Get the HTML for the image
-    html = getHTML(imagePage)
-    if(html is None):
-        print("An error occurred while opening the webpage")
-        return 0
+        # If we don't just want to print the URL to stdout
+        if(not args.urlOnly):
+            # Save the image
+            img = open(searchTerm, 'wb')
+            img.write(html.read())
+            img.close()
 
-    # If we don't just want to print the URL to stdout
-    if(not args.urlOnly):
-        # Save the image
-        data = html.read()
-        save = open(searchTerm, 'wb')
-        save.write(data)
-        save.close()
+            # Give credit to the source by writing the image url to a txt file
+            if(writeFile):
+                file.write(urls[bestIndex] + '\n')
+        else:
+            print(urls[bestIndex])
 
-        # Give credit to the source by writing the image url to a txt file
-        if(writeFile):
-            save = open(searchTerm + '.txt', 'wb')
-            save.write(imagePage)
-            save.close()
-    else:
-        print(imagePage)
+    if(not args.urlOnly and writeFile):
+        file.close()
 
 if __name__ == "__main__":
     main()
