@@ -17,6 +17,7 @@ disected....                   |   1                | 2      | 3
 # Imports
 import argparse
 from bs4 import BeautifulSoup
+import scanner
 import string
 import sys
 import threading
@@ -33,17 +34,30 @@ THREAD_LOCK = threading.Lock()
 
 
 class myThread(threading.Thread):
-    def __init__(self, searchTerm, TOLERANCE, urlOnly, writeFile, file):
+    """
+    purpose: Holds the information necessary to download a picture
+    """
+    def __init__(self, searchTerm, TOLERANCE, urlOnly, writeFile, file,
+                 useScanner, artist=None, album=None, cwd=None):
         threading.Thread.__init__(self)
-        self.searchTerm = searchTerm
         self.TOLERANCE = TOLERANCE
         self.urlOnly = urlOnly
         self.writeFile = writeFile
         self.file = file
+        self.useScanner = useScanner
+        self.artist = artist
+        self.album = album
+        self.cwd = cwd
+        if(artist == album):
+            self.searchTerm = artist + " self titled"
+        else:
+            self.searchTerm = searchTerm
+
 
     def run(self):
         getImage(self.searchTerm, self.TOLERANCE, not self.urlOnly, 
-                self.writeFile, self.file)
+                self.writeFile, self.file, self.useScanner, self.artist,
+                self.album, self.cwd)
 
 
 # Functions
@@ -59,7 +73,10 @@ def setArgParserOptions():
                         'the artist and album title in quotes. To enter' +
                         ' more than 1 artist and album, seperate each ' +
                         'artist/album combination with ":" (no double ' +
-                        'quotes)'))
+                        'quotes). To scan the current working directory' +
+                        'for artist and album folders, do "scanner". To ' +
+                        'specify a different directory to scan, do ' +
+                        '"scanner:path/to/directory"'))
 
     # Add the option to not include a .txt file with the source
     parser.add_argument('-n', '--no-source-file', help=('Image sources are ' +
@@ -158,11 +175,14 @@ def main():
     """
     purpose: the main running function to get the hd album art
     """
-    start = time.clock()
     # Parse the args with argparse
     args = setArgParserOptions()
 
     # Set the options based on the arguments
+    
+    # Assume they don't want to use the scanner for now
+    useScanner = False
+    cwd = None
 
     # Set the tolerance (default is 20)
     if(args.tolerance is not None):
@@ -176,15 +196,45 @@ def main():
     # Set the search terms
     searchTerms = args.searchTerm.split(':')
 
+    # See if they want to use the scanning ultility
+    if(len(searchTerms) <= 2 and searchTerms[0] == 'scanner'):
+        useScanner = True
+        
+        # See if they specifed a directory
+        if(len(searchTerms) == 2):
+            cwd = searchTerms[1]
+
     # Open the sources file only if we are going to write to it
     if(not args.urlOnly and writeFile):
         file = open('sources.txt', 'wb')
 
     threads = []
-    for i in range(0, len(searchTerms)):
-        threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
-                      (not args.urlOnly), file))
-        threads[i].start()
+
+    # If they didn't specify to use the scanner, use the searchTerms
+    if(not useScanner):
+        for i in range(0, len(searchTerms)):
+            threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
+                          (not args.urlOnly), file, useScanner))
+            threads[i].start()
+    # Otherwise, use the scanner
+    else:
+        i = 0
+
+        # Create a thread for each album/artist combination
+        if(cwd is not None):
+            for artist, album in scanner.getAlbums(cwd):
+                threads.append(myThread(artist + " " + album, TOLERANCE,
+                               writeFile, (not args.urlOnly), file, useScanner,
+                               artist, album, cwd))
+                threads[i].start()
+                i += 1
+        else:
+            for artist, album in scanner.getAlbums():
+                threads.append(myThread(artist + " " + album, TOLERANCE,
+                               writeFile, (not args.urlOnly), file, useScanner,
+                               artist, album))
+                threads[i].start()
+                i += 1
 
     # Wait for all the threads to finish finding their image
     for thread in threads:
@@ -194,10 +244,9 @@ def main():
     if(not args.urlOnly and writeFile):
         file.close()
 
-    print("Time: " + str(time.clock() - start))
 
-
-def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file):
+def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file, useScanner,
+             artist=None, album=None, cwd=None):
     # Get the webpage
     html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
                    IMAGE_SEARCH_URL_PART2)
@@ -212,6 +261,7 @@ def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file):
 
     # Find the urls in the metadata
     urls = []
+    bestImageType = None  # The filetype of the image to append to the filename
     for data in soup.find_all(attrs={'class': 'rg_meta'}):
         # For each metadata entry, if it contains more than 10 entries,
         # then parse it for the URL
@@ -224,6 +274,7 @@ def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file):
                         if(string.find(element, imageType) != -1):
                             # If found, append just the URL
                             urls.append(element[6:-1])
+                            bestImageType = imageType
 
     # Get all the sizes
     sizes = soup.find_all(attrs={"class": "rg_ilmn"})
@@ -248,9 +299,19 @@ def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file):
     # If we don't just want to print the URL to stdout
     if(not urlOnly):
         # Save the image
-        img = open(searchTerm, 'wb')
-        img.write(html.read())
-        img.close()
+        
+        # If they used the scanner, put the image in the approriate folder
+        if(useScanner):
+            if(cwd is None):
+                scanner.writeImage(html.read(), artist, album, bestImageType)
+            else:
+                scanner.writeImage(html.read(), artist, album, bestImageType,
+                                   cwd)
+        # Otherwise, put the image in the current working directory
+        else:
+            img = open(searchTerm, 'wb')
+            img.write(html.read())
+            img.close()
 
         # Give credit to the source by writing the image url to a txt file
         if(writeFile):
