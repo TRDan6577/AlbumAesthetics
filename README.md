@@ -52,4 +52,3 @@ ac dc back in black"`
 
 ## Future Plans
 * File system scanning - automatically build searches based on nested folders
-* Threading - Multiple album arts downloading at same time
