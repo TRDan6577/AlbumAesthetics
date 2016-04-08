@@ -19,6 +19,8 @@ import argparse
 from bs4 import BeautifulSoup
 import string
 import sys
+import threading
+import time
 import urllib2
 
 # Magic numbers and variables
@@ -27,6 +29,21 @@ DELETION_SIZE = 7  # The length of "/url?q="
 IMAGE_SEARCH_URL_PART1 = "https://www.google.com/search?q="
 IMAGE_SEARCH_URL_PART2 = "&safe=off&tbm=isch"
 ACCEPTABLE_IMAGE_FORMATS = {".jpg", ".png", ".gif"}
+THREAD_LOCK = threading.Lock()
+
+
+class myThread(threading.Thread):
+    def __init__(self, searchTerm, TOLERANCE, urlOnly, writeFile, file):
+        threading.Thread.__init__(self)
+        self.searchTerm = searchTerm
+        self.TOLERANCE = TOLERANCE
+        self.urlOnly = urlOnly
+        self.writeFile = writeFile
+        self.file = file
+
+    def run(self):
+        getImage(self.searchTerm, self.TOLERANCE, not self.urlOnly, 
+                self.writeFile, self.file)
 
 
 # Functions
@@ -141,6 +158,7 @@ def main():
     """
     purpose: the main running function to get the hd album art
     """
+    start = time.clock()
     # Parse the args with argparse
     args = setArgParserOptions()
 
@@ -162,68 +180,86 @@ def main():
     if(not args.urlOnly and writeFile):
         file = open('sources.txt', 'wb')
 
-    for searchTerm in searchTerms:
-        # Get the webpage
-        html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
-                       IMAGE_SEARCH_URL_PART2)
+    threads = []
+    for i in range(0, len(searchTerms)):
+        threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
+                      (not args.urlOnly), file))
+        threads[i].start()
 
-        if(html is None):
-            print("An error occurred while opening the webpage")
-            file.close()
-            return 0
+    # Wait for all the threads to finish finding their image
+    for thread in threads:
+        thread.join()
 
-        # prepare some delicious soup (parse the html with BeautifulSoup)
-        soup = BeautifulSoup(html.read(), 'html.parser')
-
-        # Find the urls in the metadata
-        urls = []
-        for data in soup.find_all(attrs={'class': 'rg_meta'}):
-            # For each metadata entry, if it contains more than 10 entries,
-            # then parse it for the URL
-            if(len(data.getText().split(',')) > 10):
-                for element in data.getText().split(','):
-                    # Look for '"ou":"http' and a .gif, .png, or .jpg
-                    if(string.find(element, '"ou":"http') != -1):
-                        for imageType in ACCEPTABLE_IMAGE_FORMATS:
-                            if(string.find(element, imageType) != -1):
-                                # If found, append just the URL
-                                urls.append(element[6:-1])
-
-        # Get all the sizes
-        sizes = soup.find_all(attrs={"class": "rg_ilmn"})
-
-        # Get the index of the highest quality album art
-        bestIndex = findHighestRes(sizes, TOLERANCE)
-
-        # If the index is -1, no acceptable image was found. Exit
-        if(bestIndex == -1):
-            print("No album artwork found within the acceptable tolerance")
-            print("You can change the tolerance with -t (use -h for more help)")
-            file.close()
-            return 0
-
-        # Get the HTML for the image
-        html = getHTML(urls[bestIndex])
-        if(html is None):
-            print("An error occurred while opening the webpage")
-            file.close()
-            return 0
-
-        # If we don't just want to print the URL to stdout
-        if(not args.urlOnly):
-            # Save the image
-            img = open(searchTerm, 'wb')
-            img.write(html.read())
-            img.close()
-
-            # Give credit to the source by writing the image url to a txt file
-            if(writeFile):
-                file.write(urls[bestIndex] + '\n')
-        else:
-            print(urls[bestIndex])
-
+    # Close the file if needed
     if(not args.urlOnly and writeFile):
         file.close()
+
+    print("Time: " + str(time.clock() - start))
+
+
+def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file):
+    # Get the webpage
+    html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
+                   IMAGE_SEARCH_URL_PART2)
+
+    if(html is None):
+        print("An error occurred while opening the webpage")
+        file.close()
+        return 0
+
+    # prepare some delicious soup (parse the html with BeautifulSoup)
+    soup = BeautifulSoup(html.read(), 'html.parser')
+
+    # Find the urls in the metadata
+    urls = []
+    for data in soup.find_all(attrs={'class': 'rg_meta'}):
+        # For each metadata entry, if it contains more than 10 entries,
+        # then parse it for the URL
+        if(len(data.getText().split(',')) > 10):
+            for element in data.getText().split(','):
+                time.sleep(.001)
+                # Look for '"ou":"http' and a .gif, .png, or .jpg
+                if(string.find(element, '"ou":"http') != -1):
+                    for imageType in ACCEPTABLE_IMAGE_FORMATS:
+                        if(string.find(element, imageType) != -1):
+                            # If found, append just the URL
+                            urls.append(element[6:-1])
+
+    # Get all the sizes
+    sizes = soup.find_all(attrs={"class": "rg_ilmn"})
+
+    # Get the index of the highest quality album art
+    bestIndex = findHighestRes(sizes, TOLERANCE)
+
+    # If the index is -1, no acceptable image was found. Exit
+    if(bestIndex == -1):
+        print("No album artwork found within the acceptable tolerance")
+        print("You can change the tolerance with -t (use -h for more help)")
+        file.close()
+        return 0
+
+    # Get the HTML for the image
+    html = getHTML(urls[bestIndex])
+    if(html is None):
+        print("An error occurred while opening the webpage")
+        file.close()
+        return 0
+
+    # If we don't just want to print the URL to stdout
+    if(not urlOnly):
+        # Save the image
+        img = open(searchTerm, 'wb')
+        img.write(html.read())
+        img.close()
+
+        # Give credit to the source by writing the image url to a txt file
+        if(writeFile):
+            # Make sure we're the only ones writing to the file
+            THREAD_LOCK.acquire()
+            file.write(urls[bestIndex] + '\n')
+            THREAD_LOCK.release()
+    else:
+        print(urls[bestIndex])
 
 if __name__ == "__main__":
     main()
