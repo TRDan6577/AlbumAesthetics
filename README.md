@@ -47,8 +47,7 @@ the .txt file in your local directory
 Search more than 1 album/artist combination by seperating them with colons in the quotes.
 Example:
 
-`python albumAesthetics.py "a day to remember for those who have heart:twenty one pilots blurryface:
-ac dc back in black"`
+`python albumAesthetics.py "a day to remember for those who have heart:twenty one pilots blurryface:ac dc back in black"`
 
 ## Future Plans
 * File system scanning - automatically build searches based on nested folders
