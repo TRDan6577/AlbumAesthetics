@@ -49,5 +49,15 @@ Example:
 
 `python albumAesthetics.py "a day to remember for those who have heart:twenty one pilots blurryface:ac dc back in black"`
 
-## Future Plans
-* File system scanning - automatically build searches based on nested folders
+##### WHAT THE HELL?? ENTERING ALL OF THEM AT ONCE IS EVEN MORE TEDIOUS!!!!
+If you keep a well organized music library where all of the folders are artists and those
+subfolders are their albums and inside the album subfolders are the music, then I have
+wonderful news for you. You can place albumAesthetics.py in your music folder and then run
+it from the command line with:
+
+`python albumAesthetics.py "scanner"`
+
+and it will go through all of your folders and place the appropriate album art in each one.
+Don't feel like moving your program to your music directory? Do:
+
+`python albumAesthetics.py "scanner:path/to/your/music/directory"`
