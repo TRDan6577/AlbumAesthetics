@@ -29,7 +29,7 @@ IMAGE_SEARCH = 15  # The length of "/imgres?imgurl="
 DELETION_SIZE = 7  # The length of "/url?q="
 IMAGE_SEARCH_URL_PART1 = "https://www.google.com/search?q="
 IMAGE_SEARCH_URL_PART2 = "&safe=off&tbm=isch"
-ACCEPTABLE_IMAGE_FORMATS = {".jpg", ".png", ".gif"}
+ACCEPTABLE_IMAGE_FORMATS = {".jpg", ".png", ".gif", ".jpeg"}
 THREAD_LOCK = threading.Lock()
 
 
@@ -37,8 +37,8 @@ class myThread(threading.Thread):
     """
     purpose: Holds the information necessary to download a picture
     """
-    def __init__(self, searchTerm, TOLERANCE, writeFile, urlOnly, file,
-                 useScanner, artist=None, album=None, cwd=None):
+    def __init__(self, searchTerm, TOLERANCE, writeFile, urlOnly, secondBest,
+                 file, useScanner, artist=None, album=None, cwd=None):
         threading.Thread.__init__(self)
         self.TOLERANCE = TOLERANCE
         self.urlOnly = urlOnly
@@ -48,6 +48,7 @@ class myThread(threading.Thread):
         self.artist = artist
         self.album = album
         self.cwd = cwd
+        self.secondBest = secondBest
         if(artist is not None and artist == album):
             self.searchTerm = artist + " self titled"
         else:
@@ -56,8 +57,8 @@ class myThread(threading.Thread):
 
     def run(self):
         getImage(self.searchTerm, self.TOLERANCE, not self.urlOnly, 
-                self.writeFile, self.file, self.useScanner, self.artist,
-                self.album, self.cwd)
+                self.writeFile, self.secondBest, self.file, self.useScanner,
+                self.artist, self.album, self.cwd)
 
 
 # Functions
@@ -92,21 +93,31 @@ def setArgParserOptions():
                         ' Instead, print the image url to stdout'),
                         action='store_true', dest='urlOnly')
 
+    parser.add_argument('-s', '--second-best', help=('Gives you the second ' +
+                        'highest resolution image. See the README.md for ' +
+                        'info on why you\'d want this command'),
+                        action='store_true', dest='secondBest')
+
     return parser.parse_args()
 
 
-def findHighestRes(sizes, TOLERANCE):
+def findHighestRes(sizes, TOLERANCE, secondBest):
     """
     purpose: finds the highest square resolution in the first twenty search
              results
     :param sizes: (list) a list of Tag objects that contain the image size.
                   For info on Tag objects, see the BeautifulSoup docs
     :param TOLERANCE: (int) Max distance from a square image that we'll accept
-    :return: (int) index of the highest resolution
+    :param secondBest: (bool) Tells us to return the second highest resolution
+                  image instead of the highest resolution
+    :return: (int) index of the desired image
     """
     # Keep track of the highest resolution and it's corresponding index
     highestResolution = 0
     bestIndex = -1
+    if(secondBest):
+        secondBestIndex = -1
+        secondResolution = 0
 
     # Look through the sizes and find the highest (squarish) resolution image
     for i in range(0, 19):
@@ -145,7 +156,16 @@ def findHighestRes(sizes, TOLERANCE):
                 highestResolution = length * width
                 bestIndex = i
 
-    return bestIndex
+            # Determine if it's the second highest resolution we've seen
+            if(secondBest and (length*width > secondResolution) and 
+               length*width < highestResolution):
+                secondResolution = length * width
+                secondBestIndex = i
+
+    if(secondBest):
+        return secondBestIndex
+    else:
+        return bestIndex
 
 
 def getHTML(URL):
@@ -156,8 +176,6 @@ def getHTML(URL):
     :return: (Not sure which type because the urllib2 docs don't really
              specify) the opened html page
     """
-
-    # TODO: Change the above documentation talking about mechanize
 
     # Create the broswer
     request = urllib2.Request(URL)
@@ -196,6 +214,12 @@ def main():
     else:
         writeFile = not args.writeFile
 
+    # ARe we getting the second best image?
+    if(args.secondBest):
+        secondBest = True
+    else:
+        secondBest = False
+
     # Set the search terms
     searchTerms = args.searchTerm.split(':')
 
@@ -219,7 +243,7 @@ def main():
     if(not useScanner):
         for i in range(0, len(searchTerms)):
             threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
-                          args.urlOnly, file, useScanner))
+                          args.urlOnly, secondBest, file, useScanner))
             threads[i].start()
     # Otherwise, use the scanner
     else:
@@ -229,15 +253,15 @@ def main():
         if(cwd):
             for artist, album in scanner.getAlbums(cwd):
                 threads.append(myThread(artist + " " + album, TOLERANCE,
-                               writeFile, args.urlOnly, file, useScanner,
-                               artist, album, cwd))
+                               writeFile, args.urlOnly, secondBest, file,
+                               useScanner, artist, album, cwd))
                 threads[i].start()
                 i += 1
         else:
             for artist, album in scanner.getAlbums():
                 threads.append(myThread(artist + " " + album, TOLERANCE,
-                               writeFile, args.urlOnly, file, useScanner,
-                               artist, album))
+                               writeFile, args.urlOnly, secondBest, file, 
+                               useScanner, artist, album))
                 threads[i].start()
                 i += 1
 
@@ -250,8 +274,8 @@ def main():
         file.close()
 
 
-def getImage(searchTerm, TOLERANCE, saveImage, writeFile, file, useScanner,
-             artist=None, album=None, cwd=None):
+def getImage(searchTerm, TOLERANCE, saveImage, writeFile, secondBest, file,
+             useScanner, artist=None, album=None, cwd=None):
     # Get the webpage
     html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
                    IMAGE_SEARCH_URL_PART2)
@@ -285,7 +309,7 @@ def getImage(searchTerm, TOLERANCE, saveImage, writeFile, file, useScanner,
     sizes = soup.find_all(attrs={"class": "rg_ilmn"})
 
     # Get the index of the highest quality album art
-    bestIndex = findHighestRes(sizes, TOLERANCE)
+    bestIndex = findHighestRes(sizes, TOLERANCE, secondBest)
 
     # If the index is -1, no acceptable image was found. Exit
     if(bestIndex == -1):
