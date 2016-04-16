@@ -37,7 +37,7 @@ class myThread(threading.Thread):
     """
     purpose: Holds the information necessary to download a picture
     """
-    def __init__(self, searchTerm, TOLERANCE, urlOnly, writeFile, file,
+    def __init__(self, searchTerm, TOLERANCE, writeFile, urlOnly, file,
                  useScanner, artist=None, album=None, cwd=None):
         threading.Thread.__init__(self)
         self.TOLERANCE = TOLERANCE
@@ -48,7 +48,7 @@ class myThread(threading.Thread):
         self.artist = artist
         self.album = album
         self.cwd = cwd
-        if(artist == album):
+        if(artist is not None and artist == album):
             self.searchTerm = artist + " self titled"
         else:
             self.searchTerm = searchTerm
@@ -191,7 +191,10 @@ def main():
         TOLERANCE = 20  # The max dist from a square image that we'll accept
 
     # Determine whether or not to write the source text file
-    writeFile = not args.writeFile
+    if(args.urlOnly):
+        writeFile = False
+    else:
+        writeFile = not args.writeFile
 
     # Set the search terms
     searchTerms = args.searchTerm.split(':')
@@ -205,8 +208,10 @@ def main():
             cwd = searchTerms[1]
 
     # Open the sources file only if we are going to write to it
-    if(not args.urlOnly and writeFile):
+    if(writeFile):
         file = open('sources.txt', 'wb')
+    else:
+        file = None
 
     threads = []
 
@@ -214,24 +219,24 @@ def main():
     if(not useScanner):
         for i in range(0, len(searchTerms)):
             threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
-                          (not args.urlOnly), file, useScanner))
+                          args.urlOnly, file, useScanner))
             threads[i].start()
     # Otherwise, use the scanner
     else:
         i = 0
 
         # Create a thread for each album/artist combination
-        if(cwd is not None):
+        if(cwd):
             for artist, album in scanner.getAlbums(cwd):
                 threads.append(myThread(artist + " " + album, TOLERANCE,
-                               writeFile, (not args.urlOnly), file, useScanner,
+                               writeFile, args.urlOnly, file, useScanner,
                                artist, album, cwd))
                 threads[i].start()
                 i += 1
         else:
             for artist, album in scanner.getAlbums():
                 threads.append(myThread(artist + " " + album, TOLERANCE,
-                               writeFile, (not args.urlOnly), file, useScanner,
+                               writeFile, args.urlOnly, file, useScanner,
                                artist, album))
                 threads[i].start()
                 i += 1
@@ -245,7 +250,7 @@ def main():
         file.close()
 
 
-def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file, useScanner,
+def getImage(searchTerm, TOLERANCE, saveImage, writeFile, file, useScanner,
              artist=None, album=None, cwd=None):
     # Get the webpage
     html = getHTML(IMAGE_SEARCH_URL_PART1 + searchTerm.replace(" ", "+") +
@@ -297,7 +302,7 @@ def getImage(searchTerm, TOLERANCE, urlOnly, writeFile, file, useScanner,
         return 0
 
     # If we don't just want to print the URL to stdout
-    if(not urlOnly):
+    if(saveImage):
         # Save the image
         
         # If they used the scanner, put the image in the approriate folder
