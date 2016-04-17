@@ -54,11 +54,10 @@ class myThread(threading.Thread):
         else:
             self.searchTerm = searchTerm
 
-
     def run(self):
-        getImage(self.searchTerm, self.TOLERANCE, not self.urlOnly, 
-                self.writeFile, self.secondBest, self.file, self.useScanner,
-                self.artist, self.album, self.cwd)
+        getImage(self.searchTerm, self.TOLERANCE, not self.urlOnly,
+                 self.writeFile, self.secondBest, self.file, self.useScanner,
+                 self.artist, self.album, self.cwd)
 
 
 # Functions
@@ -157,7 +156,7 @@ def findHighestRes(sizes, TOLERANCE, secondBest):
                 bestIndex = i
 
             # Determine if it's the second highest resolution we've seen
-            if(secondBest and (length*width > secondResolution) and 
+            if(secondBest and (length*width > secondResolution) and
                length*width < highestResolution):
                 secondResolution = length * width
                 secondBestIndex = i
@@ -197,7 +196,7 @@ def main():
     args = setArgParserOptions()
 
     # Set the options based on the arguments
-    
+
     # Assume they don't want to use the scanner for now
     useScanner = False
     cwd = None
@@ -226,7 +225,7 @@ def main():
     # See if they want to use the scanning ultility
     if(len(searchTerms) <= 2 and searchTerms[0] == 'scanner'):
         useScanner = True
-        
+
         # See if they specifed a directory
         if(len(searchTerms) == 2):
             cwd = searchTerms[1]
@@ -242,8 +241,8 @@ def main():
     # If they didn't specify to use the scanner, use the searchTerms
     if(not useScanner):
         for i in range(0, len(searchTerms)):
-            threads.append(myThread(searchTerms[i], TOLERANCE, writeFile, 
-                          args.urlOnly, secondBest, file, useScanner))
+            threads.append(myThread(searchTerms[i], TOLERANCE, writeFile,
+                           args.urlOnly, secondBest, file, useScanner))
             threads[i].start()
     # Otherwise, use the scanner
     else:
@@ -260,7 +259,7 @@ def main():
         else:
             for artist, album in scanner.getAlbums(ACCEPTABLE_IMAGE_FORMATS):
                 threads.append(myThread(artist + " " + album, TOLERANCE,
-                               writeFile, args.urlOnly, secondBest, file, 
+                               writeFile, args.urlOnly, secondBest, file,
                                useScanner, artist, album))
                 threads[i].start()
                 i += 1
@@ -328,7 +327,7 @@ def getImage(searchTerm, TOLERANCE, saveImage, writeFile, secondBest, file,
     # If we don't just want to print the URL to stdout
     if(saveImage):
         # Save the image
-        
+
         # If they used the scanner, put the image in the approriate folder
         if(useScanner):
             if(cwd is None):

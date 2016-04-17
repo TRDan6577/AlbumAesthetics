@@ -5,12 +5,13 @@ Author: Thomas Daniels <trd6577@g.rit.edu>
 """
 import os
 
+
 def getAlbums(ACCEPTABLE_IMAGE_FORMATS, cwd=os.getcwd()):
     """
     purpose: parses the cwd for directory names and sub directory names.
              With those names, it builds and returns an artist and an
              album for each of the sub directories
-    :param ACCEPTABLE_IMAGE_FORMATS: (list) a list of strings contianing 
+    :param ACCEPTABLE_IMAGE_FORMATS: (list) a list of strings contianing
              image format endings (.jpg, .png, etc)
     :param cwd: (path) the path to parse. If none given, set it to the cwd
     :return: (list: [str, str]) returns a list of artists and albums
@@ -38,8 +39,8 @@ def getAlbums(ACCEPTABLE_IMAGE_FORMATS, cwd=os.getcwd()):
                     if(os.path.isfile(os.path.join(path, filename + img))):
                         addSearch = False
                 # If it doesn't contain an image, add it to the search
-                if(not os.path.isfile(os.path.join(path, filename)) 
-                   and addSearch):
+                if(not os.path.isfile(os.path.join(path, filename)) and
+                   addSearch):
                     searches.append((artist, file))
 
     return searches
