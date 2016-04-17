@@ -1,10 +1,17 @@
+"""
+File: scanner.py
+Purpose: Functions that interface with the user's directory
+Author: Thomas Daniels <trd6577@g.rit.edu>
+"""
 import os
 
-def getAlbums(cwd=os.getcwd()):
+def getAlbums(ACCEPTABLE_IMAGE_FORMATS, cwd=os.getcwd()):
     """
     purpose: parses the cwd for directory names and sub directory names.
              With those names, it builds and returns an artist and an
              album for each of the sub directories
+    :param ACCEPTABLE_IMAGE_FORMATS: (list) a list of strings contianing 
+             image format endings (.jpg, .png, etc)
     :param cwd: (path) the path to parse. If none given, set it to the cwd
     :return: (list: [str, str]) returns a list of artists and albums
     """
@@ -20,8 +27,20 @@ def getAlbums(cwd=os.getcwd()):
     # Get the albums for each of the artists
     for artist in artists:
         for file in os.listdir(os.path.join(cwd, artist)):
-            if(os.path.isdir(os.path.join(cwd, os.path.join(artist, file)))):
-                searches.append((artist, file))
+            path = os.path.join(cwd, os.path.join(artist, file))
+            # For each directory, if it doesn't contain the image file
+            # then add it to the list of images to search for
+            if(os.path.isdir(path)):
+                addSearch = True
+                filename = artist + " " + file
+                # Look to see if the directory already contians an image
+                for img in ACCEPTABLE_IMAGE_FORMATS:
+                    if(os.path.isfile(os.path.join(path, filename + img))):
+                        addSearch = False
+                # If it doesn't contain an image, add it to the search
+                if(not os.path.isfile(os.path.join(path, filename)) 
+                   and addSearch):
+                    searches.append((artist, file))
 
     return searches
 

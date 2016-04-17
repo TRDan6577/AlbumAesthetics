@@ -251,14 +251,14 @@ def main():
 
         # Create a thread for each album/artist combination
         if(cwd):
-            for artist, album in scanner.getAlbums(cwd):
+            for artist, album in scanner.getAlbums(ACCEPTABLE_IMAGE_FORMATS, cwd):
                 threads.append(myThread(artist + " " + album, TOLERANCE,
                                writeFile, args.urlOnly, secondBest, file,
                                useScanner, artist, album, cwd))
                 threads[i].start()
                 i += 1
         else:
-            for artist, album in scanner.getAlbums():
+            for artist, album in scanner.getAlbums(ACCEPTABLE_IMAGE_FORMATS):
                 threads.append(myThread(artist + " " + album, TOLERANCE,
                                writeFile, args.urlOnly, secondBest, file, 
                                useScanner, artist, album))
