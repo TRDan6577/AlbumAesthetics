@@ -2,7 +2,7 @@
 For those haunted in their sleep by pixelated nightmares
 
 ## Soooo what's the point?
-For those of us that purchase/aquire music from places other than
+For those of us that purchase music from places other than
 [Amazon](http://www.amazon.com/MP3-Music-Download/b/ref=nav_shopall_dmusic?ie=UTF8&node=163856011),
 [Google Music](https://music.google.com), and [iTunes](http://www.apple.com/itunes/),
 we are burdened with either low quality or no album art at all leaving us sad. Given a string
@@ -36,7 +36,7 @@ Use the '-n' or '--no-source-file' option to download just the image
 ##### Wait a sec, +-20 pixels means the image might not be exactly square!!!
 Yep, great mathematical induction friend! If you want a perfectly square image, use the
 '-t TOLERANCE' or '--tolerance TOLERANCE' option where TOLERANCE is the number of
-pixels from square you'll allow
+pixels from square you'll allow. There are some decent ones with '-t 100'
 
 ##### I just want to upload these images to another site
 Some sites allow you to upload a photo by giving them a link. If you want the link to the
@@ -61,3 +61,9 @@ and it will go through all of your folders and place the appropriate album art i
 Don't feel like moving your program to your music directory? Do:
 
 `python albumAesthetics.py "scanner:path/to/your/music/directory"`
+
+##### What gives? Your program downloaded a 200x200 image and I see a higher one here on Google(TM)!
+Sometimes images advertise themselves as being a particular size even though they are dirty liars.
+Example: an image will be advertised as being 700x700, but it's just a 200x200 image blown up.
+If this happens to you, try using the 's' or '--second-best' option as this will find the next
+largest image. If this doesn't work for you, try playing around with the tolerance
