@@ -58,7 +58,7 @@ it from the command line with:
 `python albumAesthetics.py "scanner"`
 
 and it will go through all of your folders and place the appropriate album art in each one.
-Additionally, it looks to see if you already have an image downloaded with this program in your
+Additionally, it looks to see if you already have an image downloaded (.jpg, .png, .gif, .jpeg) in your
 directory before downloading another one. This means if you add a couple songs to your library,
 albumAesthetics won't redownload ALL of your images again - only the new ones. Don't feel like 
 moving your program to your music directory? Do:
