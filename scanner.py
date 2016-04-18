@@ -33,15 +33,16 @@ def getAlbums(ACCEPTABLE_IMAGE_FORMATS, cwd=os.getcwd()):
             # then add it to the list of images to search for
             if(os.path.isdir(path)):
                 addSearch = True
-                filename = artist + " " + file
-                # Look to see if the directory already contians an image
-                for img in ACCEPTABLE_IMAGE_FORMATS:
-                    if(os.path.isfile(os.path.join(path, filename + img))):
-                        addSearch = False
-                # If it doesn't contain an image, add it to the search
-                if(not os.path.isfile(os.path.join(path, filename)) and
-                   addSearch):
-                    searches.append((artist, file))
+                for filename in os.listdir(path):
+                    # Look to see if the directory already contians an image
+                    for img in ACCEPTABLE_IMAGE_FORMATS:
+                        if(os.path.isfile(os.path.join(path, filename)) and
+                           img in filename):
+                            addSearch = False
+                    # If it doesn't contain an image, add it to the search
+                    if(not os.path.isfile(os.path.join(path, filename)) and
+                       addSearch):
+                        searches.append((artist, file))
 
     return searches
 
