@@ -1,6 +1,9 @@
 # AlbumAesthetics
 For those haunted in their sleep by pixelated nightmares
 
+PLEASE NOTE THIS PROJECT IS NO LONGER MAINTAINED AND IS HERE FOR HISTORICAL PURPOSES.
+Take my word for it though, I promise you it worked at some point.
+
 ## Soooo what's the point?
 For those of us that purchase music from places other than
 [Amazon](http://www.amazon.com/MP3-Music-Download/b/ref=nav_shopall_dmusic?ie=UTF8&node=163856011),
